@@ -1,0 +1,85 @@
+---
+title: "BAX493_HW1"
+output:
+  html_document: default
+  pdf_document: default
+date: "2024-01-09"
+---
+```{r 1}
+library(openxlsx)
+data <- read.xlsx("data_week.xlsx")
+```
+
+
+```{r 2}
+cloud <- data[,10]
+b <- ts(cloud, frequency = 52,start = c(2015,1)) 
+plot.ts(b)	
+```
+
+```{r 3.1}
+out1 <- HoltWinters(b, beta = FALSE, gamma = FALSE)
+out1
+plot(b, main="Original Data Series", col="black")
+```
+
+```{r 3.1.1}
+# forecast based on existing model and draw the confidence level
+forecast1 <- forecast:::forecast.HoltWinters(out1, h = 26, level = c(68, 95))
+plot(forecast1, ylim = c(min(forecast1$lower), max(forecast1$upper)),
+     main = "Forecast 1 Models", ylab = "Values", xlab = "Time")
+
+```
+
+
+```{r 3.2}
+# decompose the model and draw the linear plot and trend plot
+out2 <- HoltWinters(b, beta = TRUE, gamma = FALSE)
+out2
+trend <- out2$fitted[, "trend"]
+plot.ts(cbind(b,trend))
+```
+
+```{r 3.2.1}
+# forecast based on existing model and draw the confidence level
+forecast2 <- forecast:::forecast.HoltWinters(out2, h = 26, level = c(68, 95))
+plot(forecast2, ylim = c(min(forecast2$lower), max(forecast2$upper)),
+     main = "Forecast 2 Models", ylab = "Values", xlab = "Time")
+```
+
+```{r 3.3}
+# decompose the model and draw the linear plot and season plot
+out3 <- HoltWinters(b, beta = FALSE, gamma = TRUE)
+out3
+season <- out3$fitted[, "season"]
+plot.ts(cbind(b,season))
+```
+
+```{r 3.3.1}
+# forecast based on existing model and draw the confidence level
+forecast3 <- forecast:::forecast.HoltWinters(out3, h = 26, level = c(68, 95))
+plot(forecast3, ylim = c(min(forecast3$lower), max(forecast3$upper)),
+     main = "Forecast 3 Models", ylab = "Values", xlab = "Time")
+```
+
+
+
+```{r 3.4}
+# decompose the model and draw the linear plot, trend plot and season plot
+out4 <- HoltWinters(b, beta = TRUE, gamma = TRUE)
+out4
+trend <- out4$fitted[, "trend"]
+season <- out4$fitted[, "season"]
+plot.ts(cbind(b,trend,season))
+```
+
+```{r 3.4.1}
+# forecast based on existing model and draw the confidence level
+forecast4 <- forecast:::forecast.HoltWinters(out4, h = 26, level = c(68, 95))
+plot(forecast4, ylim = c(min(forecast4$lower), max(forecast4$upper)),
+     main = "Forecast 4 Models", ylab = "Values", xlab = "Time")
+```
+
+
+
+

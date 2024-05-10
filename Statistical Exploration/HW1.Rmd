@@ -1,0 +1,70 @@
+---
+title: "HW1"
+author: "Leo"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE} 
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+#### Question 1
+$$ H_0: \text{The number of ATM customer arrivals follows a Poisson distribution}$$
+$$ H_1: \text{The number of ATM customer arrivals does not follow a Poisson distribution}$$
+
+```{r Question 1} 
+ATM <- read.csv("ATM.csv")
+
+zero <- nrow(subset(ATM, Arrivals =="0"))
+one <- nrow(subset(ATM, Arrivals =="1"))
+two <- nrow(subset(ATM, Arrivals =="2"))
+more_than_three <- nrow(subset(ATM, Arrivals %in% c("3","4","5")))
+
+Obs <- c(zero, one, two, more_than_three) #observed values
+
+dpois(c(0,1,2,3,4,5), mean(ATM$Arrivals)) #find expected values of poisson distribution
+Exp <- c(0.344, 0.367, 0.196, 0.070+0.019+0.004)
+
+#run chi-squared test using observed and expected values
+chisq.test(x = Obs, p = Exp)
+pchisq(chisq.test(x = Obs, p = Exp)$statistic, 2, lower.tail=FALSE)
+
+print("We failed to reject the null hypothesis. Thus there is no enough evidence to conclude that the number of ATM customer arrivals does not follow a Poisson distribution.")
+```
+
+#### Question 2
+$$ H_0: \text{Getting a cold is independent of the treatment group}$$
+$$ H_1: \text{Getting a cold is dependent of the treatment group}$$
+
+```{r Question 2} 
+obs <- matrix(c(88, 48, 42, 15, 4, 10), nrow = 2, byrow = TRUE) #observed values
+
+rownames(obs) <- c("Got a Cold", "Did Not Get a Cold")
+colnames(obs) <- c("Placebo", "Echinacea 20% Extract", "Echinacea 60% Extract")
+
+#run chi-squared test for independence
+chisq.test(obs)
+
+print("We failed to reject the null hypothesis and conclude that getting a cold is independent of the treatments.")
+```
+
+#### Question 3
+$$ H_0: \text{Viewing habits of viewers 35 years or older are the same when compared to all age groups}$$
+$$ H_1: \text{Viewing habits of viewers 35 years or older are not the same when compared to all age groups}$$
+
+```{r Question 3} 
+#order in ABC, CBS, NBC, NFLX
+obs <- c(30, 32, 30, 28)
+exp <- c(0.21, 0.23, 0.21, 0.35)
+
+#run chi-squared test for comparison
+chisq.test(x = obs, p = exp)
+
+print("We failed to reject the null hypothesis. Thus there is not enough evidence to conclude that viewing habits of 35 years or older are not the same from all age groups.")
+```
+
+
+
+

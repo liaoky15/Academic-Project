@@ -1,0 +1,558 @@
+---
+title: "HW4"
+author: "Leo"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#### Question 1
+```{r Question 1}
+Electronics <- read.csv("Electronics.csv")
+
+sales <- Electronics$Sales
+households <- Electronics$Households
+Street <- ifelse(Electronics$Location == "Street", 1, 0)
+Mall <- ifelse(Electronics$Location == "Mall", 1, 0)
+DT <- ifelse(Electronics$Location == "Downtown", 1, 0)
+
+model_electronics <- lm(sales ~ households + Mall + DT) # set street as the base
+
+summary(model_electronics)
+confint(model_electronics, level=0.95)
+
+## Street
+# point estimate: 14.98
+# 95% confidence interval: 1.357 to 28.598
+
+## Shopping Mall
+# point estimate: 28.37
+# 95% confidence interval: 18.554 to 38.193
+
+## Downtown
+# point estimate: 6.86
+# 95% confidence interval: -3.636 to 17.364
+
+```
+
+#### Question 2
+```{r Question 2 pt1}
+library(ggplot2)
+WinterFun <- read.csv("WinterFun.csv")
+Sales <- WinterFun$SALES
+Time <- WinterFun$TIME
+
+## Part a
+winterfun_model <- lm(Sales ~ Time)
+summary(winterfun_model)
+
+# model: Sales = 199.017 + 2.56*t + u
+
+## Part b
+ggplot(WinterFun, aes(x = Time, y = Sales)) +
+  geom_point(color = "black", size = 1) +
+  geom_line() +
+  ggtitle("Time Plot of Sales") +
+  xlab("Time (Quarter)") +
+  ylab("Sales")
+
+## We can see a clear seasonality from the plot.
+## The sales are constantly relatively lower at 2nd and 3rd quarters.
+## And are constantly relatively higher at 1st and 4th quarters every year.
+
+## Part c
+Q1 <- ifelse(WinterFun$QUARTER == "1", 1, 0)
+Q2 <- ifelse(WinterFun$QUARTER == "2", 1, 0)
+Q3 <- ifelse(WinterFun$QUARTER == "3", 1, 0)
+Q4 <- ifelse(WinterFun$QUARTER == "4", 1, 0)
+
+
+## Part d
+```
+$$ H_0: \text{The reduced model and the full model do not differ significantly, meaning quarters do not have significant influence.} $$
+$$ H_1: \text{Quarters have significant influence, so the full model is significantly better.} $$
+
+```{r Question 2 pt2}
+summary(winterfun_model)
+
+full_model <- lm(Sales ~ Time +Q2 + Q3 + Q4)
+summary(full_model)
+
+## reduced model: Sales = 199.017 + 2.56*t
+## full model: Sales = 263.35 +2.57*t - 29.87*(Q2) - 29.53*(Q3) -3.75*(Q4)
+
+anova(winterfun_model, full_model)
+
+print("At a 5% significance level, we reject the null hypothesis. Therefore we conclude that quarters have significant influence on sales.")
+
+### Partial R-squared
+
+### SSE(reduced) = 9622.1
+### SSE(full) = 1809.5
+(9622.1 - 1809.5)/9622.1 #partial r-squared
+
+print("Quarters explains 81.19% of the variation in Sales that cannot alone be explained by time.")
+```
+
+#### Question 3
+```{r Question 3 pt1}
+ED <- read.csv("EmploymentDiscrimination.csv")
+
+## Part a
+male <- ifelse(ED$GENDER == "MALE", 1, 0)
+female <- ifelse(ED$GENDER == "FEMALE", 1, 0)
+
+ED_model <- lm(SALARY ~ EDUCAT + male, data = ED)
+summary(ED_model)
+
+## model: Salary = 4173.13 + 80.70*EDUCAT + 691.81*MALE
+
+## Part b
+# Interpretation:
+# The base salary is $4173.13 regardless educational level and gender
+# Holding the gender constant, the mean salary for the employees increases by $80.7 when adding 1 educational level.
+# Mean salary for males is $691.81 higher compared to the base. Statistically significant.
+# Both p-values are lower than 0.05, indicating statistically significant, so there is evidence of employment discrimination, in both education and gender.
+
+
+## Part c
+ED_model_2 <- lm(SALARY ~ EDUCAT*male, data = ED)
+summary(ED_model_2)
+```
+$$ H_0: beta = 0 $$
+$$ H_1: beta \ne 0 $$
+
+```{r Question 3 pt2}
+# p-value for the interaction is 0.2503 > alpha, failing to reject null.
+# Interaction is not significant. Therefore the effect of gender on salary does not depend on educational level.
+
+
+## Part d
+male_data <- ED[ED$GENDER == "MALE", ]
+female_data <- ED[ED$GENDER == "FEMALE", ]
+
+plot(male_data$EDUCAT, male_data$SALARY,
+     col = "blue", xlab = "Education Level", ylab = "Salary",
+     main = "Regression Lines for Male and Female",
+     xlim = c(0, 20), ylim = c(3000, 10000))
+
+abline(lm(SALARY ~ EDUCAT, data = male_data), col = "blue")
+
+points(female_data$EDUCAT, female_data$SALARY, col = "red")
+abline(lm(SALARY ~ EDUCAT, data = female_data), col = "red")
+legend("topright", legend = c("Male", "Female"), col = c("blue", "red"), lty = 1)
+
+## These two regression lines are dissimilar.
+
+## Part e
+summary(ED_model)
+summary(ED_model_2)
+anova(ED_model)
+anova(ED_model_2)
+
+# Model in part c adds a variable in the model, which is the interaction between gender and educational level.
+# The variables of model a are all statistically significant. Whereas only EDUCAT in model c is statistically significant.
+# The adjusted R-sq, model standard error, and the overall model validity (both valid) are just slightly different for both models.
+# t-test for individual coefficients differ. Variables of model a are all statistically significant, whereas those of model c are all not.
+
+## Part f
+```
+$$ H_0: \text{The gender dummy and interaction jointly are not significant in explaining the variation in salaries} $$
+$$ H_1: \text{The gender dummy and interaction jointly have significant impact on explaining the variation in salaries} $$
+
+```{r Question 3 pt3}
+reduced_model <- lm(SALARY ~ EDUCAT, data = ED)
+anova(reduced_model, ED_model_2)
+
+# The p value is 3.799e-06, which is statistically significant and rejects the null hypothesis.
+# Therefore, inferring that gender dummy and interaction jointly are not significant in explaining the variations in salaries.
+
+
+## Part g
+# Some of the reasons may be over fitting and the power of the tests.
+# Settle with the model without interaction. Because interaction does not make significant impact to the model.
+```
+
+#### Question 4
+```{r Question 4 pt1}
+library("readxl")
+IC <- read_excel("Ice_Cream.xlsx")
+
+## Part a
+IC_model <- lm(Customers ~ Temperature + Weekend, data = IC)
+summary(IC_model)
+
+# model: Customers = -74.69 + 6.96*Temperature + 201.87*Weekend + u
+
+
+## Part b
+b <- predict(IC_model, newdata = data.frame(Temperature = 80, Weekend = 1))
+sprintf("The manager should expect around %.f customers on a Sunday with 80 degree temperature.", b)
+
+
+## Part c
+```
+$$ H_0: \beta_2 = 0 $$
+$$ H_1: \beta_2 \ne 0 $$
+```{r Question 4 pt2}
+# The estimated coefficient for weekend is 201.87 with a p value of 3.80e-13.
+# We reject the null hypothesis, stating the estimated coefficient for weekend is statistically significant at the 5% level.
+# Furthermore, we can infer that keeping the temperature constant, 201.87 more customers are expected on weekends comparing to weekdays.
+# Therefore, need extra staff members on weekends to help with the traffic.
+```
+
+#### Question 5
+```{r Question 5}
+FI <- read.csv("Fisher Index.csv")
+
+model_FI_1 <- lm(Y ~ X, data = FI)
+summary(model_FI_1)
+
+model_FI_2 <- lm(Y ~ 0 + X, data = FI)
+summary(model_FI_2)
+
+
+# The intercept has a p value of 0.87, failing to reject null hypothesis, which is not statistically significant enough to say the intercept is not zero.
+# Therefore, the second model(without intercept) fits the data better.
+
+(conventional_R_squared <- summary(model_FI_1)$r.squared)
+(raw_R_squared <- sum(FI$X*FI$Y)^2/(sum((FI$X)^2)*(sum((FI$Y)^2))))
+
+# In this case, the conventional R-squared for the model with intercept is 0.716 and the raw R-squared is 0.782
+# Raw R-squared is higher in this case.
+# It suggests that the overall pattern of the linear relationship captured by the model is dominated by the relationship between the Y and X values.
+```
+
+#### Question 6
+```{r Question 6}
+CF <- read.csv("CorporateFinancials.csv")
+
+## Part a
+CF_model_1 <- lm(Dividend ~ After_Tax_Profit, data = CF)
+summary(CF_model_1)
+
+# The p value for the variable is <2e-16, which is statistically significant. Therefore, we can say there is significant relationship between the two variables.
+
+## Part b
+Q1 <- ifelse(CF$Quarter == "1", 1, 0)
+Q2 <- ifelse(CF$Quarter == "2", 1, 0)
+Q3 <- ifelse(CF$Quarter == "3", 1, 0)
+Q4 <- ifelse(CF$Quarter == "4", 1, 0)
+
+CF_model_Q <- lm(Dividend ~ After_Tax_Profit*Q2 + After_Tax_Profit*Q3 + After_Tax_Profit*Q4, data = CF) # Using Q1 as benchmark
+
+# Using interaction between the dummies and the After_Tax_Profit variable help us differentiate between all the slope coefficients.
+
+
+## Part c
+summary(CF_model_Q)
+
+# The p value for the intercept is 0.763, which is not statistically significant.
+# The p values for all quarters and interactions are larger than 0.05, which are all not statistically significant.
+# Therefore, we can say that after tax profits significantly impact dividends, but cannot say there are seasonal patterns.
+# It is not what I expected.
+```
+
+#### Question 7
+```{r Question 7 pt1}
+Mowers <- read.csv("Mowers.csv")
+
+## Part a
+```
+
+$$ H_0: \text{Variables have no significant impact on sales} $$
+$$ H_1: \text{Variables have significant impact on sales} $$
+
+$$ H_0: \beta = 0 $$
+$$ H_1: \beta \ne 0 $$
+
+```{r Question 7 pt2}
+Mowers_model <- lm(Sales ~ Temperature + Advertising + Discount, data = Mowers)
+summary(Mowers_model)
+
+# Model: Sales = -1730.1 + 303*Temperature + 505.6*Advertising + 202.2*Discount + u
+# At a 5% level, the p value for the f-test is 1.285e-12, rejecting the null, suggesting that the variables jointly have statistical significant impact on sales.
+# At a 5% level, only the p-value of the slope coefficient of Advertising is statistically significant, suggesting only advertising has significant impact on sales.
+
+
+## Part b
+car::vif(Mowers_model)
+
+# The VIF for Advertising is larger than 10, indicating multicollinearity
+
+# The 2 reasons why to do nothing:
+# Advertising variable does not affect the quality of the model.
+# The sample size is not sufficient. Maybe adding additional data or new sample may fix the problem.
+```
+
+#### Question 8
+```{r Question 8}
+Total_PEandC <- read_excel("PersExpAndCategories.xlsx")
+
+EXPDUR <- Total_PEandC$EXPDUR
+TIME <- Total_PEandC$TIME
+LN_TIME <- log(TIME)
+LN_EXPDUR <- log(EXPDUR)
+
+model <- lm(LN_EXPDUR ~ TIME)
+summary(model)
+
+(slope <- 0.0139948 * mean(EXPDUR))
+
+# The slope of 15.48 means on the average the log of expenditure on durable goods has been increasing at the rate of 15.48 per quarter.
+# The instantaneous growth rate for expenditure on durable goods is increasing at the rate of about 1.4% per quarter.
+# semi-elasticity is 0.0139948
+
+
+log_model <- lm(LN_EXPDUR ~ LN_TIME)
+summary(log_model)
+
+# It would not make sense to run a double-log, as log-lin fits the growth model better.
+# The double-log model has lower R-sq and Adjusted R-sq
+# In this case, the slope coefficient of 0.079 means, for a 1% change in time, the expenditure on durable goods increases, on average by 0.079%.
+```
+
+#### Question 9
+```{r Question 9}
+QCOM <- read_excel("Qualcomm.xlsx")
+
+### Part a
+Time <- QCOM$time
+Close <- QCOM$Close
+
+
+plot(Time, Close,
+     type = "l",
+     xlab = "Time",
+     ylab = "Stock Price",
+     main = "Weekly Stock Prices of Qualcomm",
+     col = "blue")
+
+# The stock price started to become more volatile around the 220th week.
+# The stick price also grow exponentially starting from around the 240th week
+
+
+### Part b
+QCOM_model <- lm(Close ~ Time)
+summary(QCOM_model)
+
+# Model: Closing Price = 0.58*Time - 4.694
+# The p value for the intercept is 0.496, which is statistically significant
+# R-sq is 0.3847, adjusted R-sq = 0.3823
+# Therefore suggesting that the linear model does not fit well to the data.
+
+
+### Part c
+QCOM_model_quad <- lm(Close ~ poly(Time, 2, raw = TRUE))
+summary(QCOM_model_quad)
+
+# Model: Closing Price = 72.68 - 1.191*Time + 0.007*(Time^2) + error
+# All variable and intercepts are statistically significant
+# R-sq is 0.6218, adjusted R-sq = 0.6189
+# Suggesting it is a better fit than linear model.
+
+### Part d
+QCOM_model_cube <- lm(Close ~ poly(Time, 3, raw = TRUE))
+summary(QCOM_model_cube)
+
+# Model: Closing Price = -10.85 + 2.613*Time - 0.02958*(Time^2) + 9.290e-05*(Time^3) + error
+# All variable, but not the intercepts, are statistically significant
+# R-sq is 0.8147, adjusted R-sq = 0.8125
+# Suggesting it is a better fit than quadratic model.
+
+
+### Part e
+# Adjusted R-squared increased from 0.3823 to 0.6189 from linear model to quadratic model.
+# So quadratic model seems to be a better fit.
+
+# Adjusted R-squared increased from 0.3823 to 0.6189 to 0.8125 from linear to quadratic to cubic model.
+# Model standard error = 30.47 points as compared to 43.45 points (quadratic model).
+# So cubic model seems to be a better fit.
+```
+
+#### Question 10
+```{r Question 10 pt1}
+PickErrors <- read_excel("PickErrors.xlsx")
+
+### Part a
+```
+$$ H_0: \beta_2 = 0 $$
+$$ H_1: \beta_2 \ne 0 $$
+```{r Question 10 pt2}
+PE_model <- lm(Errors ~ Exper + Train, data = PickErrors)
+summary(PE_model)
+
+# The p value of the training variable is 0.142, failing to reject the null, which suggest that it is not statistically significant at 10% significance level, 
+
+
+### Part b
+```
+$$ H_0: \beta = 0 $$
+$$ H_1: \beta \ne 0 $$
+```{r Question 10 pt3}
+PE_model_1 <- lm(Errors ~ Exper*Train, data = PickErrors)
+summary(PE_model_1)
+
+# The p values for all variables are all above 0.10, indicating statistically significant at 10% significance level.
+
+
+### Part c
+prediction_1 <- predict(PE_model_1, data.frame(Exper = 10, Train = 1)) # for employee with 10 years of experience with training
+prediction_2 <- predict(PE_model_1, data.frame(Exper = 20, Train = 0)) # for employee with 20 years of experience without training
+
+cat("Predicted errors for 10 years of experience with training:", prediction_1, "\n")
+cat("Predicted errors for 20 years of experience without training:", prediction_2, "\n")
+```
+
+#### Question 11
+```{r Question 11}
+CompRepair <- read_excel("CompRepair.xlsx")
+scatter.smooth(x=CompRepair$NUMBER, y=CompRepair$TIME, main="TIME ~ NUMBER")
+scatter.smooth(x=CompRepair$EXPER, y=CompRepair$TIME, main="TIME ~ EXPER")
+
+## NUMBER
+CR_model_NUM <- lm(TIME ~ NUMBER,data = CompRepair)
+summary(CR_model_NUM)
+
+# P value for the slope is <2e-16, statistically significant.
+# R-sq is 0.9503, Adjusted R-sq is 0.9485
+
+CR_model_num_q <- lm(TIME ~ poly(NUMBER,2,raw=TRUE),data = CompRepair)
+summary(CR_model_num_q)
+
+anova(CR_model_NUM, CR_model_num_q)
+
+# Adjusted R-sq raised to 0.9975
+# Intercept and both outputs are statistically significant
+# Quadratic model seems to be a better fit
+
+
+## EXPER
+CR_model_EXPER_1 <- lm(TIME ~ EXPER + poly(NUMBER,2,raw=TRUE), data = CompRepair)
+summary(CR_model_EXPER_1)
+
+# P value for EXPER is 0.9, not statistically significant
+# P value for the intercept is 0.03626, statistically significant 
+# R-sq is 0.9977, Adjusted R-sq is 0.9974
+
+CR_model_EXPER_2 <- lm(TIME ~ poly(EXPER, 2, raw = TRUE) + poly(NUMBER,2,raw=TRUE),data = CompRepair)
+summary(CR_model_EXPER_2)
+
+# R-sq is 0.9978, Adjusted R-sq is 0.9975
+# Intercept and both outputs for EXPER are all not statistically significant
+
+CR_model_EXPER_3 <- lm(TIME ~ poly(EXPER, 3, raw = TRUE) + poly(NUMBER,2,raw=TRUE),data = CompRepair)
+summary(CR_model_EXPER_3)
+
+# R-sq is 0.998, Adjusted R-sq is 0.9976
+# Intercept and all outputs for EXPER are all not statistically significant
+
+anova(CR_model_EXPER_1, CR_model_EXPER_2, CR_model_EXPER_3)
+# Looking at the anova table, despite the RSS for 2nd and 3rd models are lower, the p value is not statistically significant. Therefore, cannot draw inference from this.
+# Looking at the summaries, the CR_model_EXPER_1 model seems to be the best fit.
+# Model: TIME = 65.73 + 0.37*EXPER + 3.89*NUMBER + 0.94*(NUMBER^2)
+```
+
+#### Question 12
+```{r Question 12}
+GMS <- read_excel("GermanMoneySupply.xlsx")
+
+## Part a
+model_i <- lm(Y ~ X, data = GMS)
+model_ii <- lm(log(Y) ~ log(X), data = GMS)
+model_iii <- lm(log(Y) ~ X, data = GMS)
+model_iv <- lm(Y ~ log(X), data = GMS)
+
+## Part b and c and d
+summary(model_i)
+# Model: Y = 38.97 + 0.261 * X
+# If the money supply increases by 1, the CPI increases by 0.261.
+# slope is 0.261
+
+(Elasticity_i <- 0.261 * (mean(GMS$X)/mean(GMS$Y)))
+# Elasticity is 0.596
+
+summary(model_ii)
+# Model: ln_Y = 1.4 + 0.589 * ln_X
+# If the average of money supply increases by 1, the average CPI increases by 0.589.
+
+(slope_ii <- 0.589 * (mean(GMS$Y)/mean(GMS$X)))
+# slope is 0.258
+# Elasticity is 0.589
+
+summary(model_iii)
+# Model: ln_Y = 3.93 + 0.0028 * X
+# If the money supply increases by 1, the average CPI increases by 0.0028.
+(slope_iii <- 0.0028 * mean(GMS$Y))
+# slope is 0.270
+
+(Elasticity_iii <- 0.0028 * (mean(GMS$X)))
+# Elasticity is 0.617
+
+summary(model_iv)
+# Model: Y = - 192.966 + 54.213 * ln_X
+# If the average of money supply increases by 1, the CPI increases by 54.213.
+(slope_iv <- 54.213 * (1/mean(GMS$X)))
+# slope is 0.246
+
+(Elasticity_iv <- 54.213 * (1/mean(GMS$Y)))
+# Elasticity = 0.562
+```
+
+#### Question 13
+```{r Question 13}
+ECost <- read_excel("ElectricityCost.xlsx")
+
+### Part a
+ECost_model <- lm(Cost ~ Temp + Days + Tons, data = ECost)
+summary(ECost_model)
+
+# Model: Cost = 14039.19 + 92.78*Temp + 446.14*Days - 27*Tons
+
+### Part b
+ECost_model_ln <- lm(log(Cost) ~ Temp + Days + Tons, data = ECost)
+summary(ECost_model_ln)
+
+# Model: log(Cost) = 9.7 + 0.003*Temp + 0.018*Days - 0.001*Tons
+
+### Part c
+summary(ECost_model)$r.squared
+summary(ECost_model_ln)$r.squared
+
+# Looking at the R-sq, the second model fits the data better.
+```
+
+#### Question 14
+```{r Question 14}
+GE <- read_excel("GreekEconomy.xlsx")
+
+## Part a
+ln_output <- log(GE$OUTPUT)
+ln_capital <- log(GE$CAPITAL)
+ln_labor <- log(GE$LABOR)
+
+GE_model <- lm(ln_output ~ ln_capital + ln_labor)
+summary(GE_model)
+
+# Model: log(output) = -11.9366 + 0.1398*log(Capital) + 2.3284*log(Labor)
+# Intercept and Log(labor) are statistically significant, log(capital) is not.
+# R-sq = 0.9714, Adjusted R-sq = 0.969
+# Model seems like a good fit
+
+
+## Part b
+GE_model_2 <- lm(log(OUTPUT/LABOR) ~ log(CLRATIO), data = GE)
+summary(GE_model_2)
+
+# Model: Labor Productivity = e^(-1.156) * (K/L)^(0.681) * e^u
+
+# intercept and slope both are statistically significant
+# If the average of capital labor ratio increases by 1, then the labor productivity increases by 0.681
+# R-sq = 0.9033, Adjusted R-sq = 0.8995
+
+```
+
+

@@ -1,0 +1,140 @@
+---
+title: "HW3"
+author: "Leo"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#### Question 1
+```{r Question 1}
+Banks <- read.csv("CommunityBanks.csv")
+
+plot(Banks[,c(3,4,5)])
+cor(Banks[,c(3,4,5)])
+
+## Part a: State the multiple regression model
+print("The multiple regression model is: ROAA = beta_0 + beta_1(Efficiency_Ratio) + beta_2(Total_Risk_Based_Capital) + epsilon")
+
+
+### Part b: create the estimated multiple regression model
+ROAA <- Banks$ROAA....
+Efficiency_Ratio <- Banks$Efficiency.Ratio....
+Total_Ratio <- Banks$Total.Risk.Based.Capital.Ratio....
+
+# Run the multiple regression
+bank_model <- lm(ROAA ~ Efficiency_Ratio + Total_Ratio)
+
+### Testing the overall model validity
+```
+
+$$ H_0: \beta_1 = \beta_2 = \beta_3 $$
+$$ H_1: \text{At least one } \beta \ne 0 $$
+
+```{r Question 1_2}
+summary(bank_model)
+anova(bank_model)
+
+print("F-statistic: 37.84, and the p-value for the F-test: 1.273e-14. Therefore we reject the null hypothesis and conclude that the overall model is valid.")
+print("ROAA = 1.40 - 0.01(Efficiency Ratio) + 0.03(Total Risk-based Capital)")
+
+
+### Part c: is there a significant relationship between ROAA and the independent variables
+```
+
+$$ H_0: \text{There is no significant relationship between the Independent variables and ROAA.}$$
+$$ H_1: \text{There is significant relationship between the Independent variables and ROAA.}$$
+
+
+```{r Question 1_3}
+summary(bank_model)
+anova(bank_model)
+print("The p-values of both independent variables are much smaller than 0.05, so we reject the null hypothesis, therefore concludes that there is evidence that efficiency ratio and total risk-based capital are related to the ROAA.")
+
+
+### Part d: determine whether each independent variable makes significant contribution to the regression model
+```
+
+$$ H_0: \text{There is no significant evidence that the independent variables make contribution to the model.} $$
+$$ H_1: \text{There is significant evidence that the independent variables make contribution to the model.} $$
+
+
+```{r Question 1_4}
+summary(bank_model)
+anova(bank_model)
+print("The p-values of both independent variables are much smaller than 0.05, so we reject the null hypothesis, therefore concludes that both variables make significant contribution to the model.")
+
+
+### Part e: Interpret the partial slope coefficients
+##efficiency ratio
+confint(bank_model, 'Efficiency_Ratio', level=0.95)
+
+print("Interpretation: The confidence interval indicates that the ROAA on average falls by 0.016 to 0.007 for every 1 percent increase of efficiency ratio.")
+
+##total risk-based capital
+confint(bank_model, 'Total_Ratio', level=0.95)
+print("Interpretation: The confidence interval indicates that the ROAA on average increases by 0.018 to 0.039 for every 1 percent increase of total risk-based capital.")
+
+
+### Part f: Compute R-squared
+print("R-sqaured is 27.85%, meaning 27.85% of variation in ROAA is explained by the model, and the remaining 72.15% is unexplained.")
+
+
+### Part g: What is the value of adjusted R-squared
+print("The adjusted R-squared is 0.2712.")
+
+
+### Part h: 95% interval estimate for the mean ROAA
+predict(bank_model, data.frame(Efficiency_Ratio = 60, Total_Ratio = 15), interval = "confidence", level = 0.95)
+print("We are 95% confident that the interval between 1.080 and 1.163 contains the mean ROAA with given efficiency ratio and total risk-based capital.")
+
+
+### Part i: 95% interval estimate for the ROAA of a particular bank
+predict(bank_model, data.frame(Efficiency_Ratio = 60, Total_Ratio = 15), interval = "prediction", level = 0.95)
+print("We are 95% confident that the interval between 0.568 and 1.675 contains the predicted ROAA of a particular community bank with given efficiency ratio and total risk-based capital.")
+```
+
+
+#### Question 2
+```{r Question 2}
+MedicalCo <- read.csv("MedicalCo.csv")
+
+Y <- MedicalCo$SALES
+X1 <- MedicalCo$ADV
+X2 <- MedicalCo$BONUS
+X3 <- MedicalCo$MKTSHR
+X4 <- MedicalCo$COMPET
+
+
+cor(MedicalCo)
+plot(MedicalCo) # we can see sales and adv are linear related.
+
+
+fullmodel <- lm(Y ~ X1 + X2 + X3 + X4)
+reducedmodel <- lm(Y ~ X1 + X2) #REDUCED MODEL: Removes the independent variables to be tested.
+
+summary(fullmodel)
+summary(reducedmodel)
+
+anova(reducedmodel, fullmodel)
+```
+
+$$ H_0: \text{The reduced model and the full model do not differ significantly, meaning X3 and X4 do not have influence.} $$
+$$ H_1: \text{X3 and X4 have significant influence, so the full model is significantly better.} $$
+```{r Question 2_1}
+### Conclusion and Interpretation
+print("At a 5% significance level, the p-value from the ANOVA output failed to reject the null hypothesis. Therefore we conclude that X3 and X4 do not have significant influence on Y.")
+
+
+### Partial R-squared
+### SSE(reduced) = 181176
+### SSE (full) = 175855
+(181176 - 175855)/181176 #partial r-squared
+
+print("X3 and X4 explains 2.94% of the variation in Y that cannot be explained by X1 and X2.")
+```
+
+

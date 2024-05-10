@@ -1,0 +1,151 @@
+---
+title: "HW2"
+author: "Leo"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#### Question 1
+```{r Question 1}
+Space <- read.csv("Display Space.csv")
+
+## Part a: create a scatter plot for the level of sales
+plot(Space$Display.Feet, Space$Sales, main="Displayed height vs Sales")
+abline(lm(Space$Sales ~ Space$Display.Feet))
+scatter.smooth(x=Space$Display.Feet, y=Space$Sales, main="Displayed height vs Sales")
+cor(Space$Display.Feet, Space$Sales)
+
+print("The relationship is linear.")
+
+
+## Part b: Fit a regression equation to the data.
+lm.Sales <- lm(Space$Sales ~ Space$Display.Feet)
+
+anova(lm.Sales)
+summary(lm.Sales)
+
+print("Linear Equation: Sales = 39.76*DisplayFeet + 93.03")
+
+
+## Part c: use Tukey's bulging rule and transform variables
+Log_Sales <- log10(Space$Sales)
+
+plot(Space$Display.Feet, Log_Sales, main = "Displayed height vs Log_Sales")
+abline(lm(Log_Sales ~ Space$Display.Feet))
+log.Sales <- lm(Log_Sales ~ Space$Display.Feet)
+
+anova(log.Sales)
+summary(log.Sales)
+
+print("Linear Equation: Log_Sales = 0.09995*DisplayFeet + 1.93408")
+
+
+## Part d: Compare the fit of 2 models to the data
+#r squared
+summary(lm.Sales)$r.squared
+summary(log.Sales)$r.squared
+
+#standard error
+summary(lm.Sales)$sigma
+summary(log.Sales)$sigma
+
+#p value
+summary(lm.Sales)$coefficient[2,4]
+summary(log.Sales)$coefficient[2,4]
+
+print("The first model has a higher R-squared, but also a much higher standard error. Therefore, we disregard the R-sqaured here and infer that the second model has the better fit and describe the data pattern better.")
+```
+
+
+#### Question 2
+```{r Question 2}
+library("readxl")
+Turnover <- read_excel("Turnover.xlsx")
+
+## Part a: Use regression analysis to describe how work period and age are related
+plot(Turnover$Age, Turnover$Employment, main = "Age vs Employment")
+abline(lm(Turnover$Employment ~ Turnover$Age))
+
+cor(Turnover$Age, Turnover$Employment)
+
+Employment <- Turnover$Employment
+Age <- Turnover$Age
+
+lm.Employment <- lm(Employment ~ Age)
+
+anova(lm.Employment)
+summary(lm.Employment)
+confint(lm.Employment)
+
+print("Equation: Employment = 30.633 - 0.1169*Age")
+print("Work period and Age have a slight negative linear relationship.")
+
+## Part b: Interpret the intercept and slope
+print("The intercept is 30.633 and the slope is -0.117")
+
+
+## Part c: predict with 95% confidence for a 22 years old telemarketer
+predict(lm.Employment, data.frame(Age = 22), interval = "prediction", level = 0.95)
+print("We are 95% confident that the interval between 24.3 and 31.8 months contains the predicted employment length of a 22 years old telemarketer.")
+
+
+## Part d: Predict with 95% confidence the mean work period of 22 year old telemarketers.
+predict(lm.Employment, data.frame(Age = 22), interval = "confidence", level = 0.95)
+print("We are 95% confident that the interval between 27.13 and 28.99 months contains the mean of predicted employment length of 22 years old telemarketers.")
+
+```
+
+
+#### Question 3
+```{r Question 3}
+Caterpillar <- read_excel("Caterpillar.xlsx")
+
+## Part a: estimate the CAPM
+plot(Caterpillar$Cat_Adj, Caterpillar$Market_Adj, main = "Caterpillar vs Market Adjusted Returns")
+abline(lm(Caterpillar$Market_Adj ~ Caterpillar$Cat_Adj))
+
+cor(Caterpillar$Cat_Adj, Caterpillar$Market_Adj)
+
+Cat_Adj <- Caterpillar$Cat_Adj
+Market_Adj <- Caterpillar$Market_Adj
+
+lm.CAPM <- lm(Cat_Adj ~ Market_Adj)
+
+anova(lm.CAPM)
+summary(lm.CAPM)
+
+print("The estimate for beta coefficient is 1.7584 and its standard error is 0.1843.")
+print("Therefore, the CAPM equation is Cat_adj = 1.58 + 1.76 * Market_adj")
+
+## Part b: determine if investment in Caterpillar is riskier than the market
+```
+$$H_0: \beta \le 1 $$
+$$H_1: \beta > 1 $$
+
+```{r}
+#find the t_critical value
+t_critical <- qt(0.05, 58, lower.tail = FALSE)
+
+#find the t_test_statistic value
+t_test_statistic <- (1.7584 - 1)/0.1843 # t = (b - beta)/std. error
+
+t_critical
+t_test_statistic
+
+print("Since t critical value is smaller than the t-test statistic value at a right tail test, we reject the null hypothesis and infer that Caterpillar is riskier than the market.")
+
+## Part c: At a 5% significance level, is there evidence of abnormal returns?
+```
+$$H_0: \alpha = 0 $$
+$$H_1: \alpha \ne 0 $$
+```{r}
+summary(lm.CAPM)
+print("The P value for the intercept is 0.0945, which is larger than 0.05. Therefore, we failed to reject the null hypothesis, and we can infer that there is no evidence of abnormal returns.")
+```
+
+
+
